@@ -7,8 +7,8 @@
 // @match        https://www.youtube.com/*
 // @grant        none
 // @license      MIT
-// @downloadURL  https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper.user.js
-// @updateURL    https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper.user.js
+// @downloadURL  https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper/youtube_ad_skipper.user.js
+// @updateURL    https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper/youtube_ad_skipper.user.js
 // ==/UserScript==
 
 // Based on the original work by Vyasdev217 (https://github.com/Vyasdev217/userscripts)
