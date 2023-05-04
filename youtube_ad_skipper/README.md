@@ -21,7 +21,7 @@ To use this userscript, you need to have a userscript manager extension installe
     - [Tampermonkey for Chrome, Microsoft Edge, Safari, Opera, and Firefox](https://www.tampermonkey.net/)
     - [Greasemonkey for Firefox](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/)
     - [Violentmonkey for Chrome, Microsoft Edge, and Firefox](https://violentmonkey.github.io/get-it/)
-2. Click on the following link to install the userscript: [YouTube Ad Skipper](https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper.user.js)
+2. Click on the following link to install the userscript: [YouTube Ad Skipper](https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper/youtube_ad_skipper.user.js)
 3. Confirm the installation when prompted by your userscript manager.
 4. Refresh any open YouTube pages or navigate to YouTube to start using the userscript.
 

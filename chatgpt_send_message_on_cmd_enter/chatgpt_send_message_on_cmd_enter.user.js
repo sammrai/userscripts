@@ -5,8 +5,8 @@
 // @description  Allows users to send messages on the chat.openai.com website by pressing Cmd+Enter (or Ctrl+Enter) instead of Enter alone, preventing accidental form submission when confirming Japanese input with Enter on Safari.
 // @author       sammrai
 // @match        https://chat.openai.com/*
-// @downloadURL  https://github.com/sammrai/userscripts/raw/main/chatgpt_send_message_on_cmd_enter.user.js
-// @updateURL    https://github.com/sammrai/userscripts/raw/main/chatgpt_send_message_on_cmd_enter.user.js
+// @downloadURL  https://github.com/sammrai/userscripts/raw/main/chatgpt_send_message_on_cmd_enter/chatgpt_send_message_on_cmd_enter.user.js
+// @updateURL    https://github.com/sammrai/userscripts/raw/main/chatgpt_send_message_on_cmd_enter/chatgpt_send_message_on_cmd_enter.user.js
 // ==/UserScript==
 
 (function() {
