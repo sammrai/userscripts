@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube ad skipper
 // @namespace    https://github.com/sammrai
-// @version      0.2
+// @version      0.3
 // @description  Simple ad skipper for youtube (This is not ad blocker)
 // @author       sammrai
 // @match        https://www.youtube.com/*
@@ -43,22 +43,38 @@
         }
     }
 
-    function observeAndSkipAds() {
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(() => {
-                const adSkipButton = document.querySelector('.ytp-ad-skip-button.ytp-button');
-                if (adSkipButton) {
-                    adSkipButton.click();
-                }
-                const adOverlayCloseButton = document.querySelector('.ytp-ad-overlay-close-button');
-                if (adOverlayCloseButton) {
-                    adOverlayCloseButton.click();
-                }
+    function removeAdsAndOverlays() {
+        const adsAndOverlays = [
+            { selector: '.ytp-ad-skip-button.ytp-button', action: 'click' },
+            { selector: '.ytp-ad-overlay-close-button', action: 'click' },
+            { selector: '#player-ads', action: 'remove' },
+            { selector: 'ytd-ad-slot-renderer', action: 'remove' }
+        ];
+
+        adsAndOverlays.forEach(({ selector, action }) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                console.log(`${selector} found. ${action === 'click' ? 'Clicking' : 'Removing'} it...`);
+                element[action]();
             });
         });
+    }
 
-        const config = { childList: true, subtree: true };
-        observer.observe(document.body, config);
+    function observeAndSkipAds() {
+        console.log('observeAndSkipAds called');
+
+        setTimeout(() => {
+            console.log('Initializing MutationObserver');
+
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(() => {
+                    removeAdsAndOverlays();
+                });
+            });
+
+            const config = { childList: true, subtree: true };
+            observer.observe(document.body, config);
+        }, 1500);
     }
 
     const playbackSpeedControl = createPlaybackSpeedControl();

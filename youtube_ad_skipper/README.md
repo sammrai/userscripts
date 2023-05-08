@@ -11,6 +11,7 @@ This userscript automatically skips YouTube ads and provides a playback speed co
 ## Features
 
 - Automatically skips ads on YouTube
+- Removes video and banner ads
 - Provides a playback speed control for easy adjustment of video speed
 
 ## Installation
@@ -27,7 +28,7 @@ To use this userscript, you need to have a userscript manager extension installe
 
 ## Usage
 
-Once installed, the userscript will automatically skip ads on YouTube videos. Additionally, a playback speed control will be displayed on the video player, allowing you to easily adjust the playback speed of the video.
+Once installed, the userscript will automatically skip ads on YouTube videos and remove video and banner ads. Additionally, a playback speed control will be displayed on the video player, allowing you to easily adjust the playback speed of the video.
 
 ## Acknowledgments
 
