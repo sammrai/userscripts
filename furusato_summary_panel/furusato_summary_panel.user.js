@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         ふるさと納税 自治体別合計サイドパネル
+// @name         ふるさとチョイス カート集計パネル
 // @namespace    https://github.com/sammrai
-// @version      2.5.0
-// @description  自治体ごとの合計寄付金額と内訳をサイドパネルで表示
+// @version      3.0.0
+// @description  ふるさとチョイスのカートページに自治体別の金額・商品一覧・カテゴリ別重量（去年比付き）をサイドパネルで表示
 // @author       sammrai
 // @match        https://www.furusato-tax.jp/donation/list*
 // @grant        none
@@ -15,16 +15,14 @@
 (function() {
     'use strict';
 
-    // ========================================
-    // 去年の購入量（kg）- ここを編集
-    // ========================================
-    const LAST_YEAR = {
+    const STORAGE_KEY = 'furusato_last_year';
+
+    const LAST_YEAR_DEFAULTS = {
         'ぶどう': 3.5,
         '梨': 2.2,
         '桃': 7.5,
     };
 
-    // カテゴリ判定用キーワード
     const CATEGORY_KEYWORDS = {
         'ぶどう': ['ぶどう', 'ピオーネ', 'シャインマスカット', 'ナガノパープル', '巨峰'],
         '梨': ['梨', 'なし', '幸水', '豊水', '二十世紀'],
@@ -33,7 +31,19 @@
         'マンゴー': ['マンゴー', 'mango'],
         'さくらんぼ': ['さくらんぼ', 'サクランボ', '紅秀峰', '佐藤錦'],
     };
-    // ========================================
+
+    function loadLastYear() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : { ...LAST_YEAR_DEFAULTS };
+        } catch {
+            return { ...LAST_YEAR_DEFAULTS };
+        }
+    }
+
+    function saveLastYear(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
 
     function toHalfWidth(str) {
         return str
@@ -63,8 +73,6 @@
             .replace(/^【[^】]*】\s*/g, '')
             .replace(/^＜[^＞]*＞\s*/g, '')
             .replace(/^<[^>]*>\s*/g, '')
-            .replace(/^【[^】]*】\s*/g, '')
-            .replace(/^＜[^＞]*＞\s*/g, '')
             .trim();
     }
 
@@ -83,38 +91,35 @@
         sections.forEach(section => {
             const cityNameEl = section.querySelector('.js-braze-cityname');
             const totalAmountEl = section.querySelector('.total_amount');
+            if (!cityNameEl || !totalAmountEl) return;
 
-            if (cityNameEl && totalAmountEl) {
-                const cityName = cityNameEl.textContent.trim();
-                const amount = parseInt(totalAmountEl.textContent.replace(/,/g, ''), 10) || 0;
+            const cityName = cityNameEl.textContent.trim();
+            const amount = parseInt(totalAmountEl.textContent.replace(/,/g, ''), 10) || 0;
+            const items = [];
 
-                const items = [];
-                section.querySelectorAll('.goods--kifu').forEach(product => {
-                    const nameEl = product.querySelector('.goods--kifu_name');
-                    const priceEl = product.querySelector('.goods--kifu_price');
-                    const quantityEl = product.querySelector('.goods--kifu_amount');
+            section.querySelectorAll('.goods--kifu').forEach(product => {
+                const nameEl = product.querySelector('.goods--kifu_name');
+                const priceEl = product.querySelector('.goods--kifu_price');
+                const quantityEl = product.querySelector('.goods--kifu_amount');
+                if (!nameEl || !priceEl) return;
 
-                    if (nameEl && priceEl) {
-                        const fullName = nameEl.textContent.trim();
-                        const cleanedName = cleanProductName(fullName);
-                        const name = cleanedName.length > 30 ? cleanedName.substring(0, 30) + '...' : cleanedName;
-                        const quantity = quantityEl ? parseInt(quantityEl.value, 10) || 1 : 1;
-                        const unitPrice = parseInt(priceEl.textContent.replace(/,/g, ''), 10) || 0;
-                        const unitWeight = parseWeight(fullName);
-                        const totalWeight = unitWeight * quantity;
-                        const category = detectCategory(fullName);
+                const fullName = nameEl.textContent.trim();
+                const cleanedName = cleanProductName(fullName);
+                const name = cleanedName.length > 30 ? cleanedName.substring(0, 30) + '...' : cleanedName;
+                const quantity = quantityEl ? parseInt(quantityEl.value, 10) || 1 : 1;
+                const unitPrice = parseInt(priceEl.textContent.replace(/,/g, ''), 10) || 0;
+                const unitWeight = parseWeight(fullName);
+                const totalWeight = unitWeight * quantity;
+                const category = detectCategory(fullName);
 
-                        if (category && totalWeight > 0) {
-                            categoryTotals[category] = (categoryTotals[category] || 0) + totalWeight;
-                        }
+                if (category && totalWeight > 0) {
+                    categoryTotals[category] = (categoryTotals[category] || 0) + totalWeight;
+                }
+                items.push({ name, quantity, unitPrice, unitWeight, category });
+            });
 
-                        items.push({ name, quantity, unitPrice, unitWeight, category });
-                    }
-                });
-
-                summary.push({ cityName, amount, items });
-                grandTotal += amount;
-            }
+            summary.push({ cityName, amount, items });
+            grandTotal += amount;
         });
 
         return { summary, grandTotal, categoryTotals };
@@ -160,8 +165,13 @@
             .dp-summary th:first-child { text-align: left; }
             .dp-summary td { padding: 5px 8px; font-size: 12px; }
             .dp-summary td:first-child { font-weight: 600; color: #555; }
-            .dp-summary td:nth-child(2), .dp-summary td:nth-child(3) { text-align: right; }
-            .dp-summary td:nth-child(4) { text-align: right; font-weight: 600; }
+            .dp-summary td:nth-child(2) { text-align: right; }
+            .dp-summary td:nth-child(3), .dp-summary td:nth-child(4) { text-align: right; font-weight: 600; }
+            .dp-last-year-input {
+                width: 52px; text-align: right; border: 1px solid #ddd; border-radius: 4px;
+                padding: 2px 4px; font-size: 12px; background: #fff; color: #333;
+            }
+            .dp-last-year-input:focus { outline: none; border-color: #4a9; }
             .dp-grand-total { background: #333; color: #fff; padding: 14px; text-align: center; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
             .dp-diff-plus { color: #4a9; }
             .dp-diff-minus { color: #e55; }
@@ -183,9 +193,11 @@
         }
         panel.style.display = 'block';
 
-        const allCategories = [...new Set([...Object.keys(LAST_YEAR), ...Object.keys(categoryTotals)])];
+        const lastYear = loadLastYear();
+        const allCategories = [...new Set([...Object.keys(lastYear), ...Object.keys(categoryTotals)])];
+
         const categoryRows = allCategories.map(cat => {
-            const last = LAST_YEAR[cat] || 0;
+            const last = lastYear[cat] || 0;
             const now = categoryTotals[cat] || 0;
             const diff = now - last;
             const diffClass = diff > 0 ? 'dp-diff-plus' : diff < 0 ? 'dp-diff-minus' : 'dp-diff-zero';
@@ -193,7 +205,8 @@
             return `
                 <tr>
                     <td>${cat}</td>
-                    <td style="color:#666;">${last > 0 ? formatWeight(last) : '-'}</td>
+                    <td><input class="dp-last-year-input" type="number" step="0.1" min="0"
+                        data-cat="${cat}" value="${last > 0 ? last : ''}"></td>
                     <td style="color:#080;">${now > 0 ? formatWeight(now) : '-'}</td>
                     <td class="${diffClass}">${diff !== 0 ? diffSign + formatWeight(diff) : '±0'}</td>
                 </tr>
@@ -203,9 +216,7 @@
         const allItems = [];
         summary.forEach(city => {
             const shortCity = city.cityName.replace(/^.+?\s/, '');
-            city.items.forEach(item => {
-                allItems.push({ ...item, city: shortCity });
-            });
+            city.items.forEach(item => allItems.push({ ...item, city: shortCity }));
         });
 
         const itemsHtml = allItems.map(item => `
@@ -221,15 +232,13 @@
 
         panel.innerHTML = `
             <div class="dp-items">
-                <table>
-                    ${itemsHtml}
-                </table>
+                <table>${itemsHtml}</table>
             </div>
             <div class="dp-summary">
                 <table>
                     <tr>
                         <th></th>
-                        <th>去年</th>
+                        <th>去年 (kg)</th>
                         <th>今年</th>
                         <th>差</th>
                     </tr>
@@ -238,6 +247,21 @@
             </div>
             <div class="dp-grand-total">合計 ${grandTotal.toLocaleString()}円</div>
         `;
+
+        // 去年の入力値を保存して差分を再描画
+        panel.querySelectorAll('.dp-last-year-input').forEach(input => {
+            input.addEventListener('change', () => {
+                const data = loadLastYear();
+                const val = parseFloat(input.value);
+                if (!isNaN(val) && val >= 0) {
+                    data[input.dataset.cat] = val;
+                } else {
+                    delete data[input.dataset.cat];
+                }
+                saveLastYear(data);
+                updatePanel();
+            });
+        });
     }
 
     setTimeout(updatePanel, 500);
