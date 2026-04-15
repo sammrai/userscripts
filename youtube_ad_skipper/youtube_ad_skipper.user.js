@@ -15,7 +15,7 @@
 (function () {
   'use strict';
 
-  const POLL_MS = 300;
+  const POLL_MS = 100;
 
   const SKIP_SELECTORS = [
     '.ytp-skip-ad-button',
