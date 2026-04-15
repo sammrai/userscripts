@@ -1,84 +1,82 @@
 // ==UserScript==
-// @name         YouTube ad skipper
+// @name         YouTube Ad Auto Skipper
 // @namespace    https://github.com/sammrai
-// @version      0.3
-// @description  Simple ad skipper for youtube (This is not ad blocker)
+// @version      4.1.1
+// @description  YouTube広告を自動スキップ（seek + ボタンクリック併用）+ 広告ブロッカー警告ダイアログ自動閉じ
 // @author       sammrai
 // @match        https://www.youtube.com/*
 // @grant        none
 // @license      MIT
+// @run-at       document-idle
 // @downloadURL  https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper/youtube_ad_skipper.user.js
 // @updateURL    https://github.com/sammrai/userscripts/raw/main/youtube_ad_skipper/youtube_ad_skipper.user.js
 // ==/UserScript==
 
-// Based on the original work by Vyasdev217 (https://github.com/Vyasdev217/userscripts)
-// Licensed under the MIT License
+(function () {
+  'use strict';
 
-(function() {
-    'use strict';
+  const POLL_MS = 300;
 
-    function createPlaybackSpeedControl() {
-        const playbackSpeedControl = document.createElement("input");
-        playbackSpeedControl.type = "number";
-        playbackSpeedControl.style = "background-color: black;color: white;background-repeat:no-repeat;border: none;cursor:pointer;overflow: hidden;outline:none;width:8vw;text-align: center;font-size:auto;";
-        playbackSpeedControl.step = 0.1;
-        playbackSpeedControl.min = 0;
-        playbackSpeedControl.value = 1.0;
+  const SKIP_SELECTORS = [
+    '.ytp-skip-ad-button',
+    '.ytp-ad-skip-button',
+    '.ytp-ad-skip-button-modern',
+  ];
 
-        playbackSpeedControl.addEventListener("change", function() {
-            const videoElement = document.getElementsByTagName("video")[0];
-            videoElement.playbackRate = Math.max(0.1, playbackSpeedControl.value);
-        });
+  function dismissEnforcementDialog() {
+    const dialog = document.querySelector('ytd-enforcement-message-view-model');
+    if (!dialog) return;
+    const btn = dialog.querySelector('#dismiss-button button');
+    if (btn) btn.click();
+  }
 
-        return playbackSpeedControl;
+  function trySkip() {
+    dismissEnforcementDialog();
+
+    const player = document.querySelector('#movie_player');
+    if (!player || !player.classList.contains('ad-showing')) return;
+
+    const video = document.querySelector('video');
+
+    for (const sel of SKIP_SELECTORS) {
+      const btn = document.querySelector(sel);
+      if (!btn) continue;
+      const s = window.getComputedStyle(btn);
+      if (s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0') continue;
+
+      btn.click();
+
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      for (const type of ['pointerdown','mousedown','pointerup','mouseup','click']) {
+        btn.dispatchEvent(new PointerEvent(type, {
+          bubbles: true, cancelable: true, view: window,
+          clientX: cx, clientY: cy, button: 0,
+          pointerId: 1, pointerType: 'mouse', isPrimary: true,
+        }));
+      }
+
+      btn.focus();
+      for (const type of ['keydown', 'keypress', 'keyup']) {
+        btn.dispatchEvent(new KeyboardEvent(type, {
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          bubbles: true, cancelable: true,
+        }));
+      }
+      break;
     }
 
-    function appendPlaybackControl(control) {
-        const centerElement = document.getElementById('movie_player') || document.getElementById('center');
+    setTimeout(() => {
+      if (!document.querySelector('#movie_player.ad-showing')) return;
+      if (video && isFinite(video.duration) && video.duration > 0) {
+        if (video.duration > 300) return;
+        video.currentTime = video.duration - 0.1;
+        video.play().catch(() => {});
+      }
+    }, 200);
+  }
 
-        if (centerElement) {
-            centerElement.appendChild(control);
-        } else {
-            setTimeout(() => appendPlaybackControl(control), 1000);
-        }
-    }
-
-    function removeAdsAndOverlays() {
-        const adsAndOverlays = [
-            { selector: '.ytp-ad-skip-button.ytp-button', action: 'click' },
-            { selector: '.ytp-ad-overlay-close-button', action: 'click' },
-            { selector: '#player-ads', action: 'remove' },
-            { selector: 'ytd-ad-slot-renderer', action: 'remove' }
-        ];
-
-        adsAndOverlays.forEach(({ selector, action }) => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-                console.log(`${selector} found. ${action === 'click' ? 'Clicking' : 'Removing'} it...`);
-                element[action]();
-            });
-        });
-    }
-
-    function observeAndSkipAds() {
-        console.log('observeAndSkipAds called');
-
-        setTimeout(() => {
-            console.log('Initializing MutationObserver');
-
-            const observer = new MutationObserver(mutations => {
-                mutations.forEach(() => {
-                    removeAdsAndOverlays();
-                });
-            });
-
-            const config = { childList: true, subtree: true };
-            observer.observe(document.body, config);
-        }, 1500);
-    }
-
-    const playbackSpeedControl = createPlaybackSpeedControl();
-    appendPlaybackControl(playbackSpeedControl);
-    observeAndSkipAds();
-
+  if (window.__adSkipperInterval) clearInterval(window.__adSkipperInterval);
+  window.__adSkipperInterval = setInterval(trySkip, POLL_MS);
 })();
