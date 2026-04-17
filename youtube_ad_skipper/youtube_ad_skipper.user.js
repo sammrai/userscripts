@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Ad Auto Skipper
 // @namespace    https://github.com/sammrai
-// @version      4.2.1
+// @version      4.2.2
 // @description  YouTube広告を自動スキップ（seek + ボタンクリック併用）+ 広告ブロッカー警告ダイアログ自動閉じ
 // @author       sammrai
 // @match        https://www.youtube.com/*
@@ -26,7 +26,9 @@
   function dismissEnforcementDialog() {
     const dialog = document.querySelector('ytd-enforcement-message-view-model');
     if (!dialog) return;
-    dialog.remove();
+    const wrapper = dialog.closest('tp-yt-paper-dialog');
+    (wrapper || dialog).remove();
+    document.querySelector('tp-yt-iron-overlay-backdrop')?.remove();
   }
 
   function trySkip() {
