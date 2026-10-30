@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X Tweets → Markdown
 // @namespace    https://github.com/sammrai
-// @version      2.4.1
+// @version      2.5.0
 // @description  表示中のツイートをMarkdown形式でクリップボードにコピー
 // @author       sammrai
 // @match        https://x.com/*
@@ -162,8 +162,12 @@
     Object.assign(scrollBtn.style, baseStyle, { bottom:'74px', background:'#0f1419' });
     document.body.appendChild(scrollBtn);
 
+    const saveBtn = Object.assign(document.createElement('button'), { onclick: save, textContent: '💾 保存' });
+    Object.assign(saveBtn.style, baseStyle, { bottom:'124px', background:'#00ba7c' });
+    document.body.appendChild(saveBtn);
+
     const clearBtn = Object.assign(document.createElement('button'), { onclick: clearStore, textContent: '🗑' });
-    Object.assign(clearBtn.style, baseStyle, { bottom:'124px', background:'#536471', padding:'10px 14px' });
+    Object.assign(clearBtn.style, baseStyle, { bottom:'174px', background:'#536471', padding:'10px 14px' });
     clearBtn.title = 'このページで集めたツイートを消す';
     document.body.appendChild(clearBtn);
 
@@ -410,12 +414,33 @@
 
     function update() { btn.textContent = `📋 MD ${store.size}`; }
 
+    function buildMarkdown() {
+      return getProfile() + '\n---\n\n' + [...store.values()].join('\n\n---\n\n') + '\n';
+    }
+
     function copy() {
       if (!store.size) return;
-      const md = getProfile() + '\n---\n\n' + [...store.values()].join('\n\n---\n\n') + '\n';
+      const md = buildMarkdown();
       typeof GM_setClipboard === 'function' ? GM_setClipboard(md, 'text') : navigator.clipboard.writeText(md);
       btn.textContent = `✅ ${store.size}件コピー`;
       setTimeout(update, 2000);
+    }
+
+    // ── .md ファイルとして保存 (名前は @ハンドル.md) ──
+    function save() {
+      if (!store.size) return;
+      const title = getProfile().split('\n')[0].trim() || 'x_tweets';
+      const url = URL.createObjectURL(new Blob([buildMarkdown()], { type: 'text/markdown;charset=utf-8' }));
+      const link = Object.assign(document.createElement('a'), {
+        href: url,
+        download: `${title.replace(/[\\/:*?"<>|]/g, '_')}.md`,
+      });
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      saveBtn.textContent = `✅ ${store.size}件保存`;
+      setTimeout(() => { saveBtn.textContent = '💾 保存'; }, 2000);
     }
 
     // ── 自動最下部スクロール (間隔にランダム性を持たせてBot的な一定間隔を避ける) ──
