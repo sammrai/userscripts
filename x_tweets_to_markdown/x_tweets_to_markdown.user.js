@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X Tweets → Markdown
 // @namespace    https://github.com/sammrai
-// @version      2.4.0
+// @version      2.4.1
 // @description  表示中のツイートをMarkdown形式でクリップボードにコピー
 // @author       sammrai
 // @match        https://x.com/*
@@ -249,7 +249,7 @@
       const desc = u?.description ?? document.querySelector('[data-testid="UserDescription"]')?.innerText ?? '';
       const stat = (key) => u?.interactionStatistic?.find(s => s.name === key)?.userInteractionCount ?? '?';
       return [
-        `# @${handle}`,
+        `@${handle}`,
         desc ? `> ${desc.replace(/\n/g, '\n> ')}` : '',
         `📊 **${stat('Friends')}** フォロー / **${stat('Follows')}** フォロワー / **${stat('Tweets')}** ポスト`,
       ].filter(Boolean).join('\n\n') + '\n';
