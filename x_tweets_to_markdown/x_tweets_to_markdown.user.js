@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X Tweets → Markdown
 // @namespace    https://github.com/sammrai
-// @version      2.5.0
+// @version      2.5.1
 // @description  表示中のツイートをMarkdown形式でクリップボードにコピー
 // @author       sammrai
 // @match        https://x.com/*
@@ -236,26 +236,38 @@
       update();
     }
 
-    // ── プロフィール (JSON-LDスキーマから取得、無ければ画面から) ──
+    // ── プロフィール ──
+    // 1行目は @アカウント名。アカウントは今の URL で決める (ページを移っても JSON-LD や画面に前の人の分が残るので、
+    // 説明と数字は URL のアカウントと一致するときだけ使う)
+    const NON_PROFILE_PATHS = new Set(['', 'home', 'explore', 'search', 'notifications', 'messages', 'i', 'settings', 'compose', 'jobs', 'hashtag']);
+
     function getProfile() {
+      const urlHandle = location.pathname.split('/')[1] || '';
+      if (NON_PROFILE_PATHS.has(urlHandle.toLowerCase())) return '';
+      const same = (h) => h?.toLowerCase() === urlHandle.toLowerCase();
+
       let u = null;
       try {
         const el = document.querySelector('[data-testid="UserProfileSchema-test"]');
         u = el ? JSON.parse(el.textContent).mainEntity : null;
       } catch (_) { /* 壊れたJSONは無視 */ }
+      if (!same(u?.additionalName)) u = null;
 
-      const domName = document.querySelector('[data-testid="UserName"]')?.innerText.split('\n') || [];
-      const handle = u?.additionalName
-        || domName.find(s => s.startsWith('@'))?.slice(1)
-        || location.pathname.split('/')[1] || '';
-      if (!handle) return '';
+      const domHandle = document.querySelector('[data-testid="UserName"]')?.innerText
+        .split('\n').find(s => s.startsWith('@'))?.slice(1);
+      const domMatches = same(domHandle);
 
-      const desc = u?.description ?? document.querySelector('[data-testid="UserDescription"]')?.innerText ?? '';
-      const stat = (key) => u?.interactionStatistic?.find(s => s.name === key)?.userInteractionCount ?? '?';
+      const desc = u?.description
+        ?? (domMatches ? document.querySelector('[data-testid="UserDescription"]')?.innerText : '')
+        ?? '';
+      const stat = (key) => u?.interactionStatistic?.find(s => s.name === key)?.userInteractionCount;
+      const stats = u
+        ? `📊 **${stat('Friends') ?? '?'}** フォロー / **${stat('Follows') ?? '?'}** フォロワー / **${stat('Tweets') ?? '?'}** ポスト`
+        : '';
       return [
-        `@${handle}`,
+        `@${u?.additionalName || (domMatches && domHandle) || urlHandle}`,
         desc ? `> ${desc.replace(/\n/g, '\n> ')}` : '',
-        `📊 **${stat('Friends')}** フォロー / **${stat('Follows')}** フォロワー / **${stat('Tweets')}** ポスト`,
+        stats,
       ].filter(Boolean).join('\n\n') + '\n';
     }
 
