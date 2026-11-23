@@ -13,6 +13,7 @@ A collection of userscripts for Tampermonkey.
 | Etherscan Timestamp to JST | Converts UTC timestamps on Etherscan transaction pages to Japan Standard Time (JST). | [Install](https://github.com/sammrai/userscripts/raw/main/etherscan_jst/etherscan_jst.user.js) |
 | Telegram Web Hide Sticker Messages | Hides messages that contain stickers in Telegram Web. | [Install](https://github.com/sammrai/userscripts/raw/main/telegram_hide_stickers/telegram_hide_stickers.user.js) |
 | ふるさとチョイス カート集計パネル | ふるさとチョイスのカートページに、自治体別の金額・商品一覧・カテゴリ別重量（去年比付き）をサイドパネルで表示。 | [Install](https://github.com/sammrai/userscripts/raw/main/furusato_summary_panel/furusato_summary_panel.user.js) |
+| Google Search Exclude Site | Adds a "除外" button next to each Google search result's site name that appends `-site:<domain>` to the search box. | [Install](https://github.com/sammrai/userscripts/raw/main/google_exclude_site/google_exclude_site.user.js) |
 
 ## License
 
